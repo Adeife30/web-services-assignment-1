@@ -1,0 +1,103 @@
+{
+  "info": {
+    "name": "Inventory Management API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Single Product",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/getSingleProduct?productId=1001",
+          "host": ["{{baseUrl}}"],
+          "path": ["getSingleProduct"],
+          "query": [{"key": "productId", "value": "1001"}]
+        }
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Get All",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{baseUrl}}/getAll", "host": ["{{baseUrl}}"], "path": ["getAll"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Add New",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ProductID\": 9999,\n  \"Name\": \"Assignment Test Product\",\n  \"UnitPrice\": 19.99,\n  \"StockQuantity\": 50,\n  \"Description\": \"Created by Postman/Newman test\"\n}"
+        },
+        "url": {"raw": "{{baseUrl}}/addNew", "host": ["{{baseUrl}}"], "path": ["addNew"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 201 or 409', function () { pm.expect([201, 409]).to.include(pm.response.code); });"]}}]
+    },
+    {
+      "name": "Delete One",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/deleteOne?productId=9999",
+          "host": ["{{baseUrl}}"],
+          "path": ["deleteOne"],
+          "query": [{"key": "productId", "value": "9999"}]
+        }
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 200 or 404', function () { pm.expect([200, 404]).to.include(pm.response.code); });"]}}]
+    },
+    {
+      "name": "Starts With",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/startsWith?letter=S",
+          "host": ["{{baseUrl}}"],
+          "path": ["startsWith"],
+          "query": [{"key": "letter", "value": "S"}]
+        }
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Paginate",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/paginate?startProductId=1001&endProductId=1015",
+          "host": ["{{baseUrl}}"],
+          "path": ["paginate"],
+          "query": [
+            {"key": "startProductId", "value": "1001"},
+            {"key": "endProductId", "value": "1015"}
+          ]
+        }
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 200', function () { pm.response.to.have.status(200); });", "pm.test('Batch is 10 or fewer', function () { pm.expect(pm.response.json().length).to.be.below(11); });"]}}]
+    },
+    {
+      "name": "Convert",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/convert?productId=1001",
+          "host": ["{{baseUrl}}"],
+          "path": ["convert"],
+          "query": [{"key": "productId", "value": "1001"}]
+        }
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"]}}]
+    }
+  ]
+}
