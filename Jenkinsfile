@@ -67,7 +67,6 @@ pipeline {
                 docker run -d ^
                   --name %API_CONTAINER% ^
                   --network %NETWORK_NAME% ^
-                  -p 8000:8000 ^
                   -e MONGO_URI=%MONGO_URI% ^
                   %IMAGE_NAME%
                 '''
@@ -111,7 +110,11 @@ pipeline {
                 echo 'Generating README/OpenAPI output...'
                 bat '''
                 if not exist generated mkdir generated
-                curl %API_BASE_URL%/openapi.json -o generated\\openapi.json
+                docker run --rm ^
+                  --network %NETWORK_NAME% ^
+                  -v "%cd%\\generated:/output" ^
+                  %IMAGE_NAME% ^
+                  sh -c "curl -s %API_BASE_URL%/openapi.json -o /output/openapi.json"
                 '''
             }
         }
