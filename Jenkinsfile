@@ -13,38 +13,28 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Cloning repository...'
                 checkout scm
             }
         }
 
         stage('Build Docker Ubuntu Image') {
             steps {
-                echo 'Building Docker image...'
                 bat 'docker build -t %IMAGE_NAME% .'
             }
         }
 
         stage('Create Docker Network and MongoDB') {
             steps {
-                echo 'Creating Docker network...'
                 bat 'docker network inspect %NETWORK_NAME% >nul 2>nul || docker network create %NETWORK_NAME%'
-
-                echo 'Removing old containers if they exist...'
                 bat 'docker rm -f %MONGO_CONTAINER% >nul 2>nul || exit /b 0'
                 bat 'docker rm -f %API_CONTAINER% >nul 2>nul || exit /b 0'
-
-                echo 'Starting MongoDB container...'
                 bat 'docker run -d --name %MONGO_CONTAINER% --network %NETWORK_NAME% mongo:7'
-
-                echo 'Waiting for MongoDB to start...'
                 bat 'powershell -Command "Start-Sleep -Seconds 10"'
             }
         }
 
         stage('Import CSV into MongoDB') {
             steps {
-                echo 'Importing CSV into MongoDB inside Docker...'
                 bat '''
                 docker run --rm ^
                   --network %NETWORK_NAME% ^
@@ -60,9 +50,7 @@ pipeline {
 
         stage('Run API Container in Background') {
             steps {
-                echo 'Starting API container...'
                 bat 'docker rm -f %API_CONTAINER% >nul 2>nul || exit /b 0'
-
                 bat '''
                 docker run -d ^
                   --name %API_CONTAINER% ^
@@ -70,18 +58,13 @@ pipeline {
                   -e MONGO_URI=%MONGO_URI% ^
                   %IMAGE_NAME%
                 '''
-
-                echo 'Waiting for API to start...'
                 bat 'powershell -Command "Start-Sleep -Seconds 15"'
-
-                echo 'Showing API container logs...'
                 bat 'docker logs %API_CONTAINER%'
             }
         }
 
         stage('Run Python Unit Tests') {
             steps {
-                echo 'Running pytest inside Docker...'
                 bat '''
                 docker run --rm ^
                   --network %NETWORK_NAME% ^
@@ -94,20 +77,41 @@ pipeline {
 
         stage('Run Newman Tests') {
             steps {
-                echo 'Running Newman tests inside Docker...'
-                bat '''
-                docker run --rm ^
-                  --network %NETWORK_NAME% ^
-                  -v "%cd%:/etc/newman" ^
-                  postman/newman:alpine run /etc/newman/postman_collection.json ^
-                  --env-var base_url=%API_BASE_URL%
-                '''
+                script {
+                    def collectionPath = powershell(
+                        returnStdout: true,
+                        script: '''
+$files = Get-ChildItem -Path . -Recurse -File | Where-Object {
+    $_.Name -like "*postman_collection*.json" -or $_.Name -like "*collection*.json"
+}
+
+if (-not $files) {
+    Write-Error "No Postman collection JSON file found in repo."
+    exit 1
+}
+
+$relative = Resolve-Path -Relative $files[0].FullName
+$relative = $relative -replace "^\\.\\\\", ""
+$relative = $relative -replace "\\\\", "/"
+Write-Output $relative
+'''
+                    ).trim()
+
+                    echo "Using Postman collection: ${collectionPath}"
+
+                    bat """
+                    docker run --rm ^
+                      --network %NETWORK_NAME% ^
+                      -v "%cd%:/etc/newman" ^
+                      postman/newman:alpine run /etc/newman/${collectionPath} ^
+                      --env-var base_url=%API_BASE_URL%
+                    """
+                }
             }
         }
 
         stage('Generate README from FastAPI OpenAPI') {
             steps {
-                echo 'Generating README/OpenAPI output...'
                 bat '''
                 if not exist generated mkdir generated
                 docker run --rm ^
@@ -121,7 +125,6 @@ pipeline {
 
         stage('Create Final Zip') {
             steps {
-                echo 'Preparing submission folder...'
                 bat '''
                 if exist submission rmdir /s /q submission
                 mkdir submission
@@ -141,7 +144,6 @@ pipeline {
                 if exist .env.example copy .env.example submission\\.env.example
                 '''
 
-                echo 'Creating ZIP file...'
                 bat 'powershell -Command "Compress-Archive -Path submission\\* -DestinationPath submission.zip -Force"'
             }
         }
@@ -149,18 +151,10 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up containers and network...'
             bat 'docker rm -f %API_CONTAINER% >nul 2>nul || exit /b 0'
             bat 'docker rm -f %MONGO_CONTAINER% >nul 2>nul || exit /b 0'
             bat 'docker network rm %NETWORK_NAME% >nul 2>nul || exit /b 0'
-
             archiveArtifacts artifacts: 'submission.zip', fingerprint: true, onlyIfSuccessful: false
-        }
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-        failure {
-            echo 'Pipeline failed. Check the stage logs above.'
         }
     }
 }
