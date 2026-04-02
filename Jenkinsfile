@@ -104,7 +104,7 @@ Write-Output $relative
                       --network %NETWORK_NAME% ^
                       -v "%cd%:/etc/newman" ^
                       postman/newman:alpine run /etc/newman/${collectionPath} ^
-                      --env-var base_url=%API_BASE_URL%
+                      --env-var baseUrl=%API_BASE_URL%
                     """
                 }
             }
