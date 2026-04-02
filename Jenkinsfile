@@ -9,12 +9,7 @@ pipeline {
         ZIP_STAMP = "${new Date().format('yyyy-MM-dd-HHmmss')}"
     }
 
-    stages {
-        stage('Clone from GitHub') {
-            steps {
-                git url: 'https://github.com/YOUR_USERNAME/inventory-management-api.git', branch: 'main'
-            }
-        }
+
 
         stage('Build Docker Ubuntu Image') {
             steps {
