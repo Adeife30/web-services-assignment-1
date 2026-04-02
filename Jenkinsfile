@@ -21,7 +21,7 @@ pipeline {
                 bat 'docker network create %NETWORK_NAME% || exit /b 0'
                 bat 'docker rm -f %MONGO_CONTAINER% >nul 2>nul || exit /b 0'
                 bat 'docker run -d --name %MONGO_CONTAINER% --network %NETWORK_NAME% mongo:7'
-                bat 'timeout /t 10'
+                bat 'powershell -Command "Start-Sleep -Seconds 10"'
             }
         }
 
@@ -35,7 +35,7 @@ pipeline {
             steps {
                 bat 'docker rm -f %APP_CONTAINER% >nul 2>nul || exit /b 0'
                 bat 'docker run -d --name %APP_CONTAINER% --network %NETWORK_NAME% -e MONGO_URI=%MONGO_URI% -p 8000:8000 %APP_IMAGE%'
-                bat 'timeout /t 15'
+                bat 'powershell -Command "Start-Sleep -Seconds 15"'
             }
         }
 
