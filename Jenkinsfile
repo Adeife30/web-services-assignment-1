@@ -57,9 +57,11 @@ pipeline {
             }
         }
 
-        stage('Create Final Zip') {
+            stage('Create Final Zip') {
             steps {
-                bat 'powershell -Command "$ts = Get-Date -Format ''yyyyMMdd-HHmmss''; Compress-Archive -Path app,data,docker-compose.yml,Dockerfile,Jenkinsfile,monitoring,postman,requirements.txt,scripts,tests,README.txt -DestinationPath (''complete-'' + $ts + ''.zip'') -Force"'
+                bat '''
+                powershell -Command "Get-ChildItem complete-*.zip -ErrorAction SilentlyContinue | Remove-Item -Force; $ts = Get-Date -Format yyyyMMdd-HHmmss; Compress-Archive -Path app,data,docker-compose.yml,Dockerfile,Jenkinsfile,monitoring,postman,requirements.txt,scripts,tests,README.txt -DestinationPath ('complete-' + $ts + '.zip') -Force"
+                '''
             }
         }
     }
